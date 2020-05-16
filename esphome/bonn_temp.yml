@@ -1,0 +1,36 @@
+esphome:
+    name: bonn_temp
+    platform: ESP8266
+    board: d1_mini
+
+wifi:
+    ssid: "WLAN-458941"
+    password: "36278376866873849593"
+
+ota:
+
+sensor:
+    - platform: dht12
+      temperature:
+        name: "Bonn Temperature"
+        accuracy_decimals: 3
+      humidity:
+        name: "Bonn Humidity"
+        accuracy_decimals: 3
+      update_interval: 60s
+      
+      
+
+
+logger:
+
+i2c:
+    sda: D2
+    scl: D1
+    scan: True
+    id: bus_a
+
+mqtt:
+    broker: 10.10.2.5
+    username: bonn_dht_esphome
+    password: uFBRuq9ovPVKp4t4ka

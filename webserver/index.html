@@ -1,0 +1,130 @@
+<head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+    <title>NICE</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.min.js" integrity="sha256-TQq84xX6vkwR0Qs1qH5ADkP+MvH0W+9E7TdHJsoIQiM=" crossorigin="anonymous"></script>
+
+    <!-- CSS only -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+
+
+</head>
+<body>
+
+    <!-- <style>
+        .container {
+            max-width: 1920px;
+            width: 100%;
+        }
+      </style> -->
+
+    <main role="main" class="flex-shrink-0">
+        <div class="container">
+          <h1 class="mt-5">Temperatur im Raum - Bonn</h1>
+          <p class="lead">jooo coole Temperatur und soooo.</p>
+          <canvas id="tempChart" width="400" height="238"></canvas>
+        </div>
+      </main>
+
+
+    
+    <script>
+
+        //let socket = new WebSocket("ws://10.10.2.39:8080");
+        let socket = new WebSocket("ws://temp.tobiasheinze.de");
+        
+        socket.onopen = function(e) {
+            socket.send("getallTemp");
+        };
+
+        
+
+        socket.onclose = function(event) {
+        if (event.wasClean) {
+            console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+        } else {
+            // e.g. server process killed or network down
+            // event.code is usually 1006 in this case
+            console.log('[close] Connection died');
+        }
+        };
+
+        socket.onerror = function(error) {
+            console.log(`[error] ${error.message}`);
+        };
+
+        var ctx = document.getElementById('tempChart').getContext('2d');
+        var chart = new Chart(ctx, {
+            // The type of chart we want to create
+            type: 'line',
+
+            // The data for our dataset
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    label: 'Temp',
+                    borderColor: 'rgb(255, 99, 132)',
+                }]
+            },
+
+            // Configuration options go here
+            options: {
+                title: {
+                    display: true,
+                    text: 'Temperatur im Raum'
+                },
+                scales: {
+                    yAxes: [{
+                        type: 'linear',
+                        ticks: {
+                            min: 20,
+                            max: 35
+                        },
+                        scaleLabel: {
+                            display: true,
+                            labelString: "Temperatur in °C"
+                        }
+                    }],
+                    xAxes: [{
+                        type: 'time',
+                        time: {
+                            unit: 'minute',
+                            displayFormats: {
+                                'minute': 'HH:mm'
+                            }
+                        }
+                    }]
+                },
+                legend: false
+            }
+        });
+
+
+        socket.onmessage = function(event) {
+            var temp = JSON.parse(event.data);
+            if(temp.resp == "getTemp") {
+                self.addData(self.chart, new Date(temp.intime), temp.temp)
+            }
+            
+        };
+
+        function addData(chart, label, data) {
+            chart.data.labels.push();
+            chart.data.datasets[0].data.push({y: data, x: label});
+            chart.update();
+        }
+
+        /*setInterval(function(){
+            // Add two random numbers for each dataset
+            
+            // Remove the first point so we dont just add values forever
+            myLiveChart.removeData();
+        }, 5000);*/
+
+
+    </script>
+
+    
+
+</body>

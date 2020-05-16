@@ -1,0 +1,15 @@
+{
+  "name": "bonn_temp_web",
+  "version": "1.0.0",
+  "description": "Webserver to serve html and get mqtt messages",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Tobias Heinze",
+  "license": "ISC",
+  "dependencies": {
+    "mqtt": "^4.0.1",
+    "mysql": "^2.18.1"
+  }
+}
