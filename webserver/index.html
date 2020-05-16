@@ -30,28 +30,58 @@
     
     <script>
 
-        //let socket = new WebSocket("ws://10.10.2.39:8080");
-        let socket = new WebSocket("ws://temp.tobiasheinze.de");
-        
-        socket.onopen = function(e) {
-            socket.send("getallTemp");
-        };
+       
 
-        
+        var socket;
+        var firstconnect = true;
 
-        socket.onclose = function(event) {
-        if (event.wasClean) {
-            console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
-        } else {
-            // e.g. server process killed or network down
-            // event.code is usually 1006 in this case
-            console.log('[close] Connection died');
+        initWS();
+
+        function initWS() {
+            var DEBUG = false
+            if(DEBUG){
+                socket = new WebSocket("ws://10.10.2.39:8080");
+            }else{
+                socket = new WebSocket("wss://temp.tobiasheinze.de");
+            }
+
+            socket.onopen = function(e) {
+                if(firstconnect){
+                    firstconnect = false;
+                    socket.send("getallTemp");
+                }   
+            };
+
+            
+
+            socket.onclose = function(event) {
+                if (event.wasClean) {
+                    console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+                } else {
+                    // e.g. server process killed or network down
+                    // event.code is usually 1006 in this case
+                    //console.log('[close] Connection died');
+
+                    
+                    setTimeout(initWS, 1000);
+                }
+            };
+
+            socket.onerror = function(error) {
+                console.log(`[error] ${error.message}`);
+            };
+
+            socket.onmessage = function(event) {
+                console.log(event.data)
+                var temp = JSON.parse(event.data);
+                if(temp.resp == "getTemp") {
+                    self.addData(self.chart, new Date(temp.intime), temp.temp)
+                }
+                
+            };
         }
-        };
 
-        socket.onerror = function(error) {
-            console.log(`[error] ${error.message}`);
-        };
+        
 
         var ctx = document.getElementById('tempChart').getContext('2d');
         var chart = new Chart(ctx, {
@@ -101,13 +131,7 @@
         });
 
 
-        socket.onmessage = function(event) {
-            var temp = JSON.parse(event.data);
-            if(temp.resp == "getTemp") {
-                self.addData(self.chart, new Date(temp.intime), temp.temp)
-            }
-            
-        };
+        
 
         function addData(chart, label, data) {
             chart.data.labels.push();

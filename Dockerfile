@@ -7,5 +7,4 @@ RUN npm install
 CMD [ "node", "/usr/src/app/index.js" ]
 
 EXPOSE 80
-EXPOSE 81
 

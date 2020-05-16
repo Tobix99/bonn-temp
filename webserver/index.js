@@ -2,7 +2,13 @@ var mqtt = require('mqtt')
 var mysql = require('mysql');
 var http = require('http');
 var fs = require('fs');
-var WebSocket = require('nodejs-websocket')
+var WebSocket = require('ws')
+
+var DEBUG = false
+port = 80
+if(DEBUG) {
+    port = 8080
+}
 
 var client = mqtt.connect('mqtt://10.10.2.5', {
     username: 'node_temp_server',
@@ -58,12 +64,10 @@ client.on('message', function (topic, message) { // message is Buffer
     console.log(topic + ": " + message.toString())
     
     if(topic == "bonn_temp/sensor/bonn_temperature/state") {
-        for (let index = 0; index < wsserver.clients.length; index++) {
-            conn = wsserver.connections[index]
+        for (let conn of wsserver.clients) {
             var currTime = new Date().toISOString();
             var sendOBJ = {"resp": "getTemp", "intime": currTime, "temp": parseFloat(message.toString())}
-            conn.sendText(JSON.stringify(sendOBJ));
-            
+            conn.send(JSON.stringify(sendOBJ))
         }
         mysqlconn.query("INSERT INTO temp_room (intime, temp) VALUES (NOW(), ?)", parseFloat(message.toString()), function (error, results, fields) {
             if (error) 
@@ -110,7 +114,7 @@ var webserver = http.createServer(function(request, response) {
     }
 });
 
-const wsserver = new WebSocket.Server({server: webserver.listen(80)});
+const wsserver = new WebSocket.Server({server: webserver.listen(port)});
 
 wsserver.on('connection', conn => {
     console.log("New connection")
@@ -132,15 +136,30 @@ wsserver.on('connection', conn => {
         }
     })
     conn.on("close", function (code, reason) {
-        console.log("Connection closed")
+        console.log("Connection closed, " + reason)
     })
 });
 
 function getTemp(callback) {
 
-    mysqlconn.query("SELECT intime, temp FROM temp_room ORDER BY `temp_room`.`intime` ASC", function (error, results, fields) {
+    var date = new Date();
+    stringDate = date.getFullYear() + "-" + pad(date.getMonth() + 1, 2) + "-" + pad(date.getDate(), 2) // 2020-05-16 23:59:59.999
+    stringDatein = stringDate + " 00:00:00.00"
+    stringDateOut = stringDate + " 23:59:59.999"
+
+    mysqlconn.query({
+        sql: 'SELECT intime, temp FROM temp_room WHERE intime BETWEEN ? AND ? ORDER BY `temp_room`.`intime` ASC',
+        timeout: 40000, // 40s
+        values: [stringDatein, stringDateOut]
+      }, function (error, results, fields) {
         if (error) 
             throw error;
         callback(results)
     });
+}
+
+function pad(num, size) {
+    var s = num+"";
+    while (s.length < size) s = "0" + s;
+    return s;
 }
