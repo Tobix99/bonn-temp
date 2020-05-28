@@ -4,6 +4,7 @@ esphome:
   board: d1_mini
 
 logger:
+  level: INFO
 
 ota:
 
@@ -18,17 +19,21 @@ mqtt:
   password: uFBRuq9ovPVKp4t4ka
 
 sensor:
-  - platform: dht12
+  - platform: sht3xd
     temperature:
       name: "Bonn Temperature"
-      accuracy_decimals: 3
+      accuracy_decimals: 2
     humidity:
       name: "Bonn Humidity"
-      accuracy_decimals: 3
-    update_interval: 10min
+      accuracy_decimals: 2
+    address: 0x45
+    #update_interval: 10min
 
+deep_sleep:
+  run_duration: 1s
+  sleep_duration: 10min
+  
 i2c:
   sda: D2
   scl: D1
-  scan: True
-  id: bus_a
+  scan: False
