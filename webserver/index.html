@@ -72,7 +72,7 @@
             };
 
             socket.onmessage = function(event) {
-                console.log(event.data)
+                //console.log(event.data)
                 var temp = JSON.parse(event.data);
                 if(temp.resp == "getTemp") {
                     self.addData(self.chart, new Date(temp.intime), temp.temp)
@@ -108,7 +108,7 @@
                     yAxes: [{
                         type: 'linear',
                         ticks: {
-                            min: 20,
+                            min: 0,
                             max: 35
                         },
                         scaleLabel: {

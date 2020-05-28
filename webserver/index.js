@@ -1,5 +1,5 @@
 var mqtt = require('mqtt')
-var mysql = require('mysql');
+var mysql = require('mysql2');
 var http = require('http');
 var fs = require('fs');
 var WebSocket = require('ws')
@@ -10,6 +10,8 @@ if(DEBUG) {
     port = 8080
 }
 
+var firstRun = true;
+
 var client = mqtt.connect('mqtt://10.10.2.5', {
     username: 'node_temp_server',
     password: Buffer.from('qFdp5c56x5BKhvEAy8')
@@ -19,31 +21,38 @@ var mysqlconn = mysql.createConnection({host: '10.10.2.5', user: 'temp', passwor
 
 mysqlconn.connect();
 
-mysqlconn.query("SHOW TABLES LIKE 'temp_room'", function (error, results, fields) {
-    if (error) 
-        throw error;
-    if(results.length == 0) {
-        console.log("table not exists")
-
-        mysqlconn.query("CREATE TABLE temp_room (tempID int NOT NULL AUTO_INCREMENT, intime DATETIME, temp float, PRIMARY KEY (tempID))", function (error, results, fields) {
+function initTables(){
+    if(firstRun){
+        firstRun = false;
+        mysqlconn.query("SHOW TABLES LIKE 'temp_room'", function (error, results, fields) {
             if (error) 
                 throw error;
+            if(results.length == 0) {
+                console.log("table not exists")
+        
+                mysqlconn.query("CREATE TABLE temp_room (tempID int NOT NULL AUTO_INCREMENT, intime DATETIME, temp float, PRIMARY KEY (tempID))", function (error, results, fields) {
+                    if (error) 
+                        throw error;
+                });
+            }
         });
-    }
-});
-
-mysqlconn.query("SHOW TABLES LIKE 'hum_room'", function (error, results, fields) {
-    if (error) 
-        throw error;
-    if(results.length == 0) {
-        console.log("table not exists")
-
-        mysqlconn.query("CREATE TABLE hum_room (humID int NOT NULL AUTO_INCREMENT, intime DATETIME, humidity float, PRIMARY KEY (humID))", function (error, results, fields) {
+        
+        mysqlconn.query("SHOW TABLES LIKE 'hum_room'", function (error, results, fields) {
             if (error) 
                 throw error;
+            if(results.length == 0) {
+                console.log("table not exists")
+        
+                mysqlconn.query("CREATE TABLE hum_room (humID int NOT NULL AUTO_INCREMENT, intime DATETIME, humidity float, PRIMARY KEY (humID))", function (error, results, fields) {
+                    if (error) 
+                        throw error;
+                });
+            }
         });
     }
-});
+    
+}
+
 
 
 client.on('connect', function (err) {
@@ -62,6 +71,8 @@ client.on('connect', function (err) {
 
 client.on('message', function (topic, message) { // message is Buffer
     console.log(topic + ": " + message.toString())
+
+    initTables();
     
     if(topic == "bonn_temp/sensor/bonn_temperature/state") {
         for (let conn of wsserver.clients) {
